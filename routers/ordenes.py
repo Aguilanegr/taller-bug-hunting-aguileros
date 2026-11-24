@@ -12,19 +12,18 @@ router = APIRouter(prefix="/ordenes", tags=["Órdenes"])
 
 @router.get("/", response_model=List[OrdenResponse])
 async def obtener_ordenes(db: AsyncSession = Depends(obtener_bd)):
-    resultado = await db.execute(select(OrdenModel).options(selectinload(OrdenModel.mecanico))
+    resultado = await db.execute(select(OrdenModel).options(selectinload(OrdenModel.mecanico)))
     ordenes = resultado.scalars().all()
     return ordenes
 
 @router.post("/", status_code=201, response_model=OrdenResponse)
 async def crear_orden(orden: OrdenCreate, db: AsyncSession = Depends(obtener_bd)):
-     resultado_mecanico = await db.execute(
+    resultado_mecanico = await db.execute(
         select(MecanicoModel).where(
             MecanicoModel.id == orden.mecanico_id,
             MecanicoModel.activo == True
         )
     )
-
     mecanico = resultado_mecanico.scalar_one_or_none()
 
     if mecanico is None:
@@ -32,11 +31,19 @@ async def crear_orden(orden: OrdenCreate, db: AsyncSession = Depends(obtener_bd)
             status_code=400,
             detail="El mecanico no existe o esta desactivado"
         )
+
     nueva_orden = OrdenModel(**orden.model_dump())
     db.add(nueva_orden)
     await db.commit()
-    await db.refresh(nueva_orden)
-    return nueva_orden
+    
+    # Volvemos a consultar la orden cargando la relación 'mecanico' para OrdenResponse
+    resultado_orden = await db.execute(
+        select(OrdenModel)
+        .options(selectinload(OrdenModel.mecanico))
+        .where(OrdenModel.id == nueva_orden.id)
+    )
+    return resultado_orden.scalar_one()
+
 
 @router.patch("/{orden_id}", response_model=OrdenResponse)
 async def actualizar_orden(orden_id: int, orden_patch: OrdenPatch, db: AsyncSession = Depends(obtener_bd)):
