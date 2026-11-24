@@ -36,7 +36,7 @@ async def crear_orden(orden: OrdenCreate, db: AsyncSession = Depends(obtener_bd)
     db.add(nueva_orden)
     await db.commit()
     
-    # Volvemos a consultar la orden cargando la relación 'mecanico' para OrdenResponse
+    #  Volvemos a consultar la orden cargando la relación 'mecanico' para OrdenResponse
     resultado_orden = await db.execute(
         select(OrdenModel)
         .options(selectinload(OrdenModel.mecanico))
