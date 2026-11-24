@@ -8,8 +8,7 @@ class MecanicoCreate(BaseModel):
 class MecanicoResponse(MecanicoCreate):
     id: int
     activo: bool
-    ordenes: List["OrdenResponse"] = []
-
+    
     model_config = {"from_attributes": True}
 
 class OrdenCreate(BaseModel):
